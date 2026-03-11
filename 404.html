@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Redirecting…</title>
+  <script>
+    // GitHub Pages SPA redirect trick:
+    // When someone visits /Justin, Pages serves this 404.html.
+    // We grab the last path segment and bounce to /?name=Justin.
+    const segments = window.location.pathname.split('/').filter(Boolean);
+    const name = segments.length ? segments[segments.length - 1] : null;
+    if (name) {
+      window.location.replace(
+        window.location.origin + '/?name=' + encodeURIComponent(name)
+      );
+    } else {
+      window.location.replace(window.location.origin + '/');
+    }
+  </script>
+</head>
+<body></body>
+</html>

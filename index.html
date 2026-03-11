@@ -311,8 +311,13 @@
           'X-GitHub-Api-Version': '2022-11-28',
         },
       });
-      if (!res.ok) return null;
+      if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        console.warn(`[birthday] GitHub API ${res.status} for variable "${varName}":`, body);
+        return null;
+      }
       const data = await res.json();
+      console.info(`[birthday] variable "${varName}" =`, data.value);
       return data.value ?? null; // expected: "MM-DD" e.g. "03-11"
     }
 
