@@ -264,22 +264,13 @@
     // ════════════════════════════════════════════════════════════
     //  CONFIGURATION
     //  ─────────────────────────────────────────────────────────
-    //  1. Create a fine-grained Personal Access Token at:
-    //     GitHub → Settings → Developer Settings →
-    //     Personal Access Tokens → Fine-grained tokens
-    //     Grant: Repository → "Variables" → Read-only
-    //
-    //  2. Add one Actions variable per person in your repo at:
-    //     Settings → Secrets and variables → Actions → Variables
-    //     Variable name : their name in ALL_CAPS  (e.g. JUSTIN)
-    //     Variable value: birthday as MM-DD        (e.g. 03-11)
-    //
-    //  3. Fill in the three values below.
+    //  Add birthdays to birthdays.json in this repo (ALL_CAPS name → MM-DD).
+    //  No token needed — the file is fetched publicly from GitHub.
     // ════════════════════════════════════════════════════════════
     const CONFIG = {
       githubOwner : 'justin-hale',
       githubRepo  : 'birthday-celebration',
-      githubToken : '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',
+      branch      : 'main',
     };
     // ════════════════════════════════════════════════════════════
 
@@ -300,25 +291,19 @@
       return segments.length ? decodeURIComponent(segments[segments.length - 1]).trim() : null;
     }
 
-    // ── Fetch the birthday variable from GitHub ──
+    // ── Fetch birthdays.json from the repo (no auth needed) ──
     async function fetchBirthday (name) {
-      const varName = name.toUpperCase().replace(/\s+/g, '_');
-      const url = `https://api.github.com/repos/${CONFIG.githubOwner}/${CONFIG.githubRepo}/actions/variables/${varName}`;
-      const res = await fetch(url, {
-        headers: {
-          'Authorization'       : `Bearer ${CONFIG.githubToken}`,
-          'Accept'              : 'application/vnd.github+json',
-          'X-GitHub-Api-Version': '2022-11-28',
-        },
-      });
+      const url = `https://raw.githubusercontent.com/${CONFIG.githubOwner}/${CONFIG.githubRepo}/refs/heads/${CONFIG.branch}/birthdays.json`;
+      const res = await fetch(url);
       if (!res.ok) {
-        const body = await res.text().catch(() => '');
-        console.warn(`[birthday] GitHub API ${res.status} for variable "${varName}":`, body);
+        console.warn(`[birthday] Could not load birthdays.json: ${res.status}`);
         return null;
       }
       const data = await res.json();
-      console.info(`[birthday] variable "${varName}" =`, data.value);
-      return data.value ?? null; // expected: "MM-DD" e.g. "03-11"
+      const key  = name.toUpperCase().replace(/\s+/g, '_');
+      const val  = data[key] ?? null;
+      console.info(`[birthday] "${key}" =`, val);
+      return val; // expected: "MM-DD" e.g. "03-11"
     }
 
     // ── Check if a date string contains today's MM-DD ──
@@ -452,16 +437,6 @@
           <div class="error-text">
             No name found in URL.<br>
             Try <strong>?name=YourName</strong> or <strong>/YourName</strong>
-          </div>`;
-        return;
-      }
-
-      // Validate config isn't still placeholder
-      if (CONFIG.githubOwner === 'YOUR_GITHUB_USERNAME') {
-        app.innerHTML = `
-          <div class="error-text">
-            Update the CONFIG block in index.html with your<br>
-            GitHub username, repo name, and personal access token.
           </div>`;
         return;
       }
