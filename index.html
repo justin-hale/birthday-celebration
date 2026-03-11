@@ -277,10 +277,12 @@
     const app = document.getElementById('app');
 
     // ── Refresh counter (sessionStorage resets when tab is closed) ──
+    // Tiers: 1-3 normal | 4-5 tier1 | 6-9 tier2 | 10+ redirect
     const REFRESH_KEY = 'bday_refreshes';
     const refreshCount = (parseInt(sessionStorage.getItem(REFRESH_KEY) ?? '0') + 1);
     sessionStorage.setItem(REFRESH_KEY, String(refreshCount));
-    const tooManyRefreshes = refreshCount > 3; // load #1 + 2 refreshes = 3 total
+    if (refreshCount >= 10) window.location.replace('https://www.google.com/404');
+    const refreshTier = refreshCount > 5 ? 2 : refreshCount > 3 ? 1 : 0;
 
     // ── Get name from URL ──
     // Supports: ?name=Justin  OR  the last non-empty path segment /Justin
@@ -292,41 +294,51 @@
     }
 
     // ── Fetch birthdays.json from the repo (no auth needed) ──
-    async function fetchBirthday (name) {
+    async function fetchData (name) {
       const url = `https://raw.githubusercontent.com/${CONFIG.githubOwner}/${CONFIG.githubRepo}/refs/heads/${CONFIG.branch}/birthdays.json`;
       const res = await fetch(url);
       if (!res.ok) {
         console.warn(`[birthday] Could not load birthdays.json: ${res.status}`);
         return null;
       }
-      const data = await res.json();
+      const json = await res.json();
       const key  = name.toUpperCase().replace(/\s+/g, '_');
-      // Case-insensitive lookup so "Justin", "JUSTIN", "justin" all match
-      const match = Object.keys(data).find(k => k.toUpperCase().replace(/\s+/g, '_') === key);
-      const val  = match ? data[match] : null;
-      console.info(`[birthday] "${key}" =`, val);
-      return val; // expected: "MM-DD" e.g. "03-11"
+      // Case-insensitive lookup
+      const match = Object.keys(json.people).find(k => k.toUpperCase().replace(/\s+/g, '_') === key);
+      const dateStr = match ? json.people[match] : null;
+      console.info(`[birthday] "${key}" =`, dateStr);
+      return { dateStr, messages: json.messages };
     }
 
-    // ── Check if a date string contains today's MM-DD ──
-    function isToday (dateStr) {
-      const d  = new Date();
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const dd = String(d.getDate()).padStart(2, '0');
-      const needle = `${mm}-${dd}`;
-      // Accept "MM-DD", "YYYY-MM-DD", "MM/DD", "YYYY/MM/DD"
-      return dateStr.replace(/\//g, '-').includes(needle);
+    // ── Determine birthday status: 'birthday' | 'belated' | 'rain' ──
+    function birthdayStatus (dateStr) {
+      if (!dateStr) return 'rain';
+      const normalized = dateStr.replace(/\//g, '-');
+      const [mm, dd] = normalized.slice(-5).split('-').map(Number);
+      const today = new Date();
+      const bday  = new Date(today.getFullYear(), mm - 1, dd);
+      const diff  = Math.floor((new Date(today.getFullYear(), today.getMonth(), today.getDate()) - bday) / 86400000);
+      // Handle year wrap: birthday Dec 30, today Jan 2 → diff would be ~365, check last year
+      if (diff === 0) return 'birthday';
+      if (diff >= 1 && diff <= 3) return 'belated';
+      const bdayLastYear = new Date(today.getFullYear() - 1, mm - 1, dd);
+      const diffLY = Math.floor((new Date(today.getFullYear(), today.getMonth(), today.getDate()) - bdayLastYear) / 86400000);
+      if (diffLY >= 1 && diffLY <= 3) return 'belated';
+      return 'rain';
+    }
+
+    // ── Pick a random message from the pool, substituting {name} ──
+    function pickMessage (messages, key, name) {
+      const pool = messages[key];
+      if (!pool?.length) return '';
+      return pool[Math.floor(Math.random() * pool.length)].replace(/\{name\}/g, name);
     }
 
     // ════════════════════════════════════════════════════════════
     //  BIRTHDAY SCENE
     // ════════════════════════════════════════════════════════════
-    function showBirthday (name) {
+    function showBirthday (text) {
       document.body.className = 'theme-birthday';
-
-      const text = tooManyRefreshes
-        ? `You're still here?<br>You'll always be an idiot.<br>Refreshing won't change that.`
-        : `Congrats, ${name}!<br>You're still an idiot,<br>but an idiot with a birthday!`;
 
       // Confetti
       const CONFETTI_COLORS = ['#ff6b6b','#feca57','#48dbfb','#ff9ff3','#54a0ff','#5f27cd','#00d2d3','#1dd1a1','#ff9f43','#ee5a24'];
@@ -371,12 +383,8 @@
     // ════════════════════════════════════════════════════════════
     //  RAIN SCENE
     // ════════════════════════════════════════════════════════════
-    function showRain (name) {
+    function showRain (text) {
       document.body.className = 'theme-rain';
-
-      const text = tooManyRefreshes
-        ? `You're still here?<br>You'll always be an idiot.<br>Refreshing won't change that.`
-        : `Hey, ${name}.<br>You're an idiot.<br>deal with it.`;
 
       // Clouds (layered — darker ones behind)
       const CLOUD_TONES = ['#5d7285','#6e8599','#7a8fa3','#8ca3b8'];
@@ -444,15 +452,29 @@
       }
 
       try {
-        const birthday = await fetchBirthday(name);
-        if (birthday && isToday(birthday)) {
-          showBirthday(name);
+        const result   = await fetchData(name);
+        const messages = result?.messages ?? {};
+        const status   = birthdayStatus(result?.dateStr ?? null);
+
+        // Refresh tier overrides the normal message pool
+        const tierKey = refreshTier === 2 ? 'refresh_tier2'
+                      : refreshTier === 1 ? 'refresh_tier1'
+                      : null;
+
+        if (tierKey) {
+          // Show scene matching the underlying status but with refresh message
+          const text = pickMessage(messages, tierKey, name);
+          status === 'rain' ? showRain(text) : showBirthday(text);
+        } else if (status === 'birthday') {
+          showBirthday(pickMessage(messages, 'birthday', name));
+        } else if (status === 'belated') {
+          showBirthday(pickMessage(messages, 'belated', name));
         } else {
-          showRain(name);
+          showRain(pickMessage(messages, 'rain', name));
         }
       } catch (err) {
         console.error(err);
-        showRain(name); // fallback
+        showRain(`Hey, ${name}.<br>You're an idiot.<br>deal with it.`);
       }
     }
 

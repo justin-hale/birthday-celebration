@@ -1,5 +1,45 @@
 {
-  "Justin": "03-11",
-  "Joseph": "08-30",
-  "Celia": "07-14"
+  "people": {
+    "John":     "02-02",
+    "Cameron":  "03-09",
+    "Justin":   "03-11",
+    "Dominic":  "04-20",
+    "Topher":   "05-14",
+    "Hannah":   "05-15",
+    "Celia":    "07-14",
+    "Nicholas": "07-25",
+    "Joseph":   "08-30",
+    "Misty":    "10-07",
+    "Jackson":  "10-20"
+  },
+  "messages": {
+    "birthday": [
+      "Congrats, {name}!<br>You're still an idiot,<br>but an idiot with a birthday!",
+      "Happy birthday, {name}!<br>Still an idiot —<br>just one year older and none the wiser.",
+      "It's your birthday, {name}!<br>The world kept spinning despite your idiocy.<br>Congrats.",
+      "Another year, {name}.<br>Another year of being a lovable idiot.<br>Happy birthday."
+    ],
+    "belated": [
+      "Happy belated birthday, {name}!<br>You're still an idiot.<br>We just forgot to tell you sooner.",
+      "A few days late, {name},<br>but happy belated!<br>Still an idiot, still celebrated. Sort of.",
+      "Better late than never, {name}.<br>Happy belated!<br>The idiocy has officially aged another year.",
+      "Oh right, {name}'s birthday was a couple days ago.<br>Happy belated, idiot.<br>You're still loved. Barely."
+    ],
+    "rain": [
+      "No birthday for you, {name}.<br>You're an idiot.<br>deal with it.",
+      "Not your birthday, {name}.<br>Still an idiot though.",
+      "Nothing to celebrate here, {name}.<br>Just you, being an idiot.",
+      "Nope. Not today, {name}.<br>Come back on your birthday.<br>Idiot."
+    ],
+    "refresh_tier1": [
+      "You're still here?<br>You'll always be an idiot.<br>Refreshing won't change that.",
+      "Refreshing again, {name}?<br>Impressive.<br>Impressively idiotic.",
+      "Still here?<br>The page hasn't changed.<br>You're still an idiot."
+    ],
+    "refresh_tier2": [
+      "At this point, {name},<br>the real idiot is whoever keeps refreshing this page.",
+      "Seriously, {name}?<br>This many refreshes?<br>The bar was low and you dug under it.",
+      "You've refreshed so many times, {name}.<br>The confetti isn't coming.<br>Go home."
+    ]
+  }
 }
