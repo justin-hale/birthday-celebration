@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Birthday Check</title>
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Georgia, 'Times New Roman', serif;
+    }
+
+    #app {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    /* ─────────────────────────────────────────
+       BIRTHDAY THEME
+    ───────────────────────────────────────── */
+    .theme-birthday {
+      background: linear-gradient(135deg, #ffe4f0 0%, #fff4cc 50%, #e4f0ff 100%);
+      animation: bgShift 8s ease-in-out infinite alternate;
+    }
+    @keyframes bgShift {
+      0%   { background: linear-gradient(135deg, #ffe4f0 0%, #fff4cc 50%, #e4f0ff 100%); }
+      100% { background: linear-gradient(135deg, #e4f0ff 0%, #ffe4f0 50%, #fff4cc 100%); }
+    }
+
+    /* Confetti pieces */
+    .confetti {
+      position: fixed;
+      top: -20px;
+      border-radius: 2px;
+      animation: confettiFall linear infinite;
+      pointer-events: none;
+      z-index: 1;
+    }
+    @keyframes confettiFall {
+      0%   { transform: translateY(0)      rotate(0deg)   scaleX(1);   opacity: 1; }
+      50%  { transform: translateY(50vh)   rotate(360deg) scaleX(-1); }
+      100% { transform: translateY(115vh)  rotate(720deg) scaleX(1);   opacity: 0.4; }
+    }
+
+    /* Balloons */
+    .balloon-wrap {
+      position: fixed;
+      bottom: -160px;
+      animation: balloonRise ease-in-out infinite;
+      pointer-events: none;
+      z-index: 1;
+    }
+    @keyframes balloonRise {
+      0%   { transform: translateY(0)      translateX(0);   opacity: 0; }
+      5%   { opacity: 0.9; }
+      30%  { transform: translateY(-30vh)  translateX(12px); }
+      60%  { transform: translateY(-65vh)  translateX(-14px); }
+      85%  { transform: translateY(-95vh)  translateX(8px);  opacity: 0.7; }
+      100% { transform: translateY(-120vh) translateX(0);   opacity: 0; }
+    }
+    .balloon-body {
+      width: 64px;
+      height: 80px;
+      border-radius: 50% 50% 50% 50% / 55% 55% 45% 45%;
+      position: relative;
+      box-shadow: inset -10px -10px 20px rgba(0,0,0,0.18);
+    }
+    /* Shine */
+    .balloon-body::before {
+      content: '';
+      position: absolute;
+      top: 14%;
+      left: 16%;
+      width: 22%;
+      height: 16%;
+      background: rgba(255,255,255,0.45);
+      border-radius: 50%;
+      transform: rotate(-35deg);
+    }
+    /* Knot */
+    .balloon-knot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin: 0 auto;
+      margin-top: -2px;
+    }
+    .balloon-string {
+      width: 1.5px;
+      height: 90px;
+      background: rgba(0,0,0,0.25);
+      margin: 0 auto;
+    }
+
+    /* Birthday message */
+    .birthday-text {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 2rem 3rem;
+      background: rgba(255,255,255,0.55);
+      border-radius: 24px;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 8px 32px rgba(255,120,180,0.2);
+      max-width: min(860px, 90vw);
+      animation: bounceIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+    .birthday-text p {
+      font-size: clamp(1.8rem, 4.5vw, 3.6rem);
+      font-weight: bold;
+      color: #8b1a4a;
+      line-height: 1.45;
+      text-shadow: 1px 2px 0 rgba(255,180,210,0.8);
+      animation: textPulse 3s ease-in-out infinite;
+    }
+    @keyframes textPulse {
+      0%, 100% { transform: scale(1); }
+      50%       { transform: scale(1.025); }
+    }
+    @keyframes bounceIn {
+      from { opacity: 0; transform: scale(0.6); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    /* ─────────────────────────────────────────
+       RAIN THEME
+    ───────────────────────────────────────── */
+    .theme-rain {
+      background: linear-gradient(180deg, #1a2436 0%, #2c3e56 55%, #3d556e 100%);
+    }
+
+    /* Clouds */
+    .cloud {
+      position: fixed;
+      background: #7a8fa3;
+      border-radius: 60px;
+      animation: cloudDrift linear infinite;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .cloud::before {
+      content: '';
+      position: absolute;
+      background: #7a8fa3;
+      border-radius: 50%;
+      width: 55%;
+      height: 160%;
+      top: -70%;
+      left: 12%;
+    }
+    .cloud::after {
+      content: '';
+      position: absolute;
+      background: #7a8fa3;
+      border-radius: 50%;
+      width: 40%;
+      height: 130%;
+      top: -50%;
+      right: 14%;
+    }
+    @keyframes cloudDrift {
+      from { transform: translateX(-260px); }
+      to   { transform: translateX(calc(100vw + 260px)); }
+    }
+
+    /* Rain drops */
+    .raindrop {
+      position: fixed;
+      width: 2px;
+      background: linear-gradient(to bottom, transparent 0%, #a8cfe8 100%);
+      top: -60px;
+      border-radius: 0 0 3px 3px;
+      animation: rainFall linear infinite;
+      pointer-events: none;
+      z-index: 2;
+      transform: rotate(14deg);
+    }
+    @keyframes rainFall {
+      from { transform: translateY(0)      rotate(14deg); opacity: 0.7; }
+      to   { transform: translateY(115vh)  rotate(14deg); opacity: 0.2; }
+    }
+    /* Splash at bottom */
+    .splash {
+      position: fixed;
+      bottom: 0;
+      height: 4px;
+      background: transparent;
+      border-radius: 50%;
+      animation: splashAnim linear infinite;
+      pointer-events: none;
+      z-index: 2;
+    }
+    @keyframes splashAnim {
+      0%   { box-shadow: none; opacity: 0; }
+      60%  { opacity: 0; }
+      70%  { box-shadow: 0 0 0 2px rgba(168,207,232,0.6); opacity: 1; }
+      100% { box-shadow: 0 0 0 8px rgba(168,207,232,0); opacity: 0; }
+    }
+
+    /* Rain message */
+    .rain-text {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 2rem 3rem;
+      background: rgba(0,0,0,0.38);
+      border-radius: 20px;
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(168,207,232,0.15);
+      max-width: min(800px, 90vw);
+      animation: rainTextIn 0.9s ease-out both;
+    }
+    .rain-text p {
+      font-size: clamp(1.7rem, 4.2vw, 3.4rem);
+      font-weight: bold;
+      color: #d6ecf5;
+      line-height: 1.45;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+    @keyframes rainTextIn {
+      from { opacity: 0; transform: translateY(-30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─────────────────────────────────────────
+       LOADING / ERROR
+    ───────────────────────────────────────── */
+    .loading-text {
+      font-size: 1.4rem;
+      color: #666;
+      animation: fadeInOut 1.5s ease-in-out infinite;
+    }
+    @keyframes fadeInOut {
+      0%, 100% { opacity: 0.4; }
+      50%       { opacity: 1; }
+    }
+    .error-text {
+      font-size: 1.3rem;
+      color: #c0392b;
+      background: #fdecea;
+      padding: 1.5rem 2rem;
+      border-radius: 12px;
+      text-align: center;
+      max-width: 600px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="loading-text">Loading&hellip;</div>
+  </div>
+
+  <script>
+    // ════════════════════════════════════════════════════════════
+    //  CONFIGURATION
+    //  ─────────────────────────────────────────────────────────
+    //  1. Create a fine-grained Personal Access Token at:
+    //     GitHub → Settings → Developer Settings →
+    //     Personal Access Tokens → Fine-grained tokens
+    //     Grant: Repository → "Variables" → Read-only
+    //
+    //  2. Add one Actions variable per person in your repo at:
+    //     Settings → Secrets and variables → Actions → Variables
+    //     Variable name : their name in ALL_CAPS  (e.g. JUSTIN)
+    //     Variable value: birthday as MM-DD        (e.g. 03-11)
+    //
+    //  3. Fill in the three values below.
+    // ════════════════════════════════════════════════════════════
+    const CONFIG = {
+      githubOwner : 'jutin-hale',
+      githubRepo  : 'birthday-celebration',
+      githubToken : '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',
+    };
+    // ════════════════════════════════════════════════════════════
+
+    const app = document.getElementById('app');
+
+    // ── Refresh counter (sessionStorage resets when tab is closed) ──
+    const REFRESH_KEY = 'bday_refreshes';
+    const refreshCount = (parseInt(sessionStorage.getItem(REFRESH_KEY) ?? '0') + 1);
+    sessionStorage.setItem(REFRESH_KEY, String(refreshCount));
+    const tooManyRefreshes = refreshCount > 3; // load #1 + 2 refreshes = 3 total
+
+    // ── Get name from URL ──
+    // Supports: ?name=Justin  OR  the last non-empty path segment /Justin
+    function getNameFromURL () {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('name')) return params.get('name').trim();
+      const segments = window.location.pathname.split('/').filter(Boolean);
+      return segments.length ? decodeURIComponent(segments[segments.length - 1]).trim() : null;
+    }
+
+    // ── Fetch the birthday variable from GitHub ──
+    async function fetchBirthday (name) {
+      const varName = name.toUpperCase().replace(/\s+/g, '_');
+      const url = `https://api.github.com/repos/${CONFIG.githubOwner}/${CONFIG.githubRepo}/actions/variables/${varName}`;
+      const res = await fetch(url, {
+        headers: {
+          'Authorization'       : `Bearer ${CONFIG.githubToken}`,
+          'Accept'              : 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.value ?? null; // expected: "MM-DD" e.g. "03-11"
+    }
+
+    // ── Check if a date string contains today's MM-DD ──
+    function isToday (dateStr) {
+      const d  = new Date();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const needle = `${mm}-${dd}`;
+      // Accept "MM-DD", "YYYY-MM-DD", "MM/DD", "YYYY/MM/DD"
+      return dateStr.replace(/\//g, '-').includes(needle);
+    }
+
+    // ════════════════════════════════════════════════════════════
+    //  BIRTHDAY SCENE
+    // ════════════════════════════════════════════════════════════
+    function showBirthday (name) {
+      document.body.className = 'theme-birthday';
+
+      const text = tooManyRefreshes
+        ? `You're still here?<br>You'll always be an idiot.<br>Refreshing won't change that.`
+        : `Congrats, ${name}!<br>You're still an idiot,<br>but an idiot with a birthday!`;
+
+      // Confetti
+      const CONFETTI_COLORS = ['#ff6b6b','#feca57','#48dbfb','#ff9ff3','#54a0ff','#5f27cd','#00d2d3','#1dd1a1','#ff9f43','#ee5a24'];
+      for (let i = 0; i < 90; i++) {
+        const el = document.createElement('div');
+        el.className = 'confetti';
+        const size = 7 + Math.random() * 11;
+        el.style.cssText = `
+          left: ${Math.random() * 102}vw;
+          width: ${size}px;
+          height: ${size * (Math.random() > 0.5 ? 1 : 0.45)}px;
+          background: ${CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)]};
+          border-radius: ${Math.random() > 0.45 ? '50%' : '2px'};
+          animation-duration: ${2.2 + Math.random() * 4}s;
+          animation-delay: ${-(Math.random() * 6)}s;
+        `;
+        document.body.appendChild(el);
+      }
+
+      // Balloons
+      const BALLOON_COLORS = ['#ff6b6b','#feca57','#ff9ff3','#54a0ff','#1dd1a1','#ff9f43','#c56cf0','#7bed9f'];
+      for (let i = 0; i < 14; i++) {
+        const wrap  = document.createElement('div');
+        wrap.className = 'balloon-wrap';
+        const color = BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)];
+        wrap.style.cssText = `
+          left: ${3 + Math.random() * 94}vw;
+          animation-duration: ${5.5 + Math.random() * 6}s;
+          animation-delay: ${-(Math.random() * 9)}s;
+        `;
+        wrap.innerHTML = `
+          <div class="balloon-body" style="background:${color}"></div>
+          <div class="balloon-knot"  style="background:${color}"></div>
+          <div class="balloon-string"></div>
+        `;
+        document.body.appendChild(wrap);
+      }
+
+      app.innerHTML = `<div class="birthday-text"><p>${text}</p></div>`;
+    }
+
+    // ════════════════════════════════════════════════════════════
+    //  RAIN SCENE
+    // ════════════════════════════════════════════════════════════
+    function showRain (name) {
+      document.body.className = 'theme-rain';
+
+      const text = tooManyRefreshes
+        ? `You're still here?<br>You'll always be an idiot.<br>Refreshing won't change that.`
+        : `Hey, ${name}.<br>You're an idiot.<br>deal with it.`;
+
+      // Clouds (layered — darker ones behind)
+      const CLOUD_TONES = ['#5d7285','#6e8599','#7a8fa3','#8ca3b8'];
+      for (let i = 0; i < 7; i++) {
+        const cloud = document.createElement('div');
+        cloud.className = 'cloud';
+        const w = 130 + Math.random() * 150;
+        cloud.style.cssText = `
+          width: ${w}px;
+          height: ${w * 0.42}px;
+          top: ${Math.random() * 35}vh;
+          background: ${CLOUD_TONES[Math.floor(Math.random() * CLOUD_TONES.length)]};
+          opacity: ${0.65 + Math.random() * 0.35};
+          animation-duration: ${18 + Math.random() * 28}s;
+          animation-delay: ${-(Math.random() * 35)}s;
+        `;
+        // mirror ::before/::after colours
+        cloud.style.setProperty('--cloud-color', cloud.style.background);
+        document.body.appendChild(cloud);
+      }
+
+      // Rain drops
+      for (let i = 0; i < 120; i++) {
+        const drop = document.createElement('div');
+        drop.className = 'raindrop';
+        const h = 18 + Math.random() * 30;
+        const left = Math.random() * 101;
+        drop.style.cssText = `
+          left: ${left}vw;
+          height: ${h}px;
+          opacity: ${0.35 + Math.random() * 0.5};
+          animation-duration: ${0.45 + Math.random() * 0.7}s;
+          animation-delay: ${-(Math.random() * 2)}s;
+        `;
+        document.body.appendChild(drop);
+
+        // Paired splash at bottom
+        const splash = document.createElement('div');
+        splash.className = 'splash';
+        splash.style.cssText = `
+          left: ${left}vw;
+          width: ${4 + Math.random() * 6}px;
+          animation-duration: ${0.45 + Math.random() * 0.7}s;
+          animation-delay: ${drop.style.animationDelay};
+        `;
+        document.body.appendChild(splash);
+      }
+
+      app.innerHTML = `<div class="rain-text"><p>${text}</p></div>`;
+    }
+
+    // ════════════════════════════════════════════════════════════
+    //  MAIN
+    // ════════════════════════════════════════════════════════════
+    async function main () {
+      const name = getNameFromURL();
+
+      if (!name) {
+        app.innerHTML = `
+          <div class="error-text">
+            No name found in URL.<br>
+            Try <strong>?name=YourName</strong> or <strong>/YourName</strong>
+          </div>`;
+        return;
+      }
+
+      // Validate config isn't still placeholder
+      if (CONFIG.githubOwner === 'YOUR_GITHUB_USERNAME') {
+        app.innerHTML = `
+          <div class="error-text">
+            Update the CONFIG block in index.html with your<br>
+            GitHub username, repo name, and personal access token.
+          </div>`;
+        return;
+      }
+
+      try {
+        const birthday = await fetchBirthday(name);
+        if (birthday && isToday(birthday)) {
+          showBirthday(name);
+        } else {
+          showRain(name);
+        }
+      } catch (err) {
+        console.error(err);
+        showRain(name); // fallback
+      }
+    }
+
+    main();
+  </script>
+</body>
+</html>
